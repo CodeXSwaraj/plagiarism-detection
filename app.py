@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 import os
 from docx import Document
 from pdfminer.high_level import extract_text
@@ -54,37 +54,55 @@ def calculate_similarity(text1, text2):
 
     return similarity, ' '.join(highlighted_text1), ' '.join(highlighted_text2)
 
-
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        file = request.files['file']
-        if file:
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-            file.save(file_path)
+        if 'file' in request.files:
+            # Handle file upload for plagiarism check 
+            file = request.files['file']
+            if file:
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+                file.save(file_path)
 
-            input_text = extract_text_from_file(file_path)
-            if input_text:
-                similarity_results = []
-                for filename in os.listdir(app.config['DATABASE_FOLDER']):
-                    database_file_path = os.path.join(app.config['DATABASE_FOLDER'], filename)
-                    database_text = extract_text_from_file(database_file_path)
-                    if database_text:
-                        similarity, highlighted_input, highlighted_database = calculate_similarity(input_text, database_text)
-                        similarity_results.append({
-                            "document": filename,
-                            "similarity": round(similarity * 100, 2),
-                            "highlighted_input": highlighted_input,
-                            "highlighted_database": highlighted_database
-                        })
+                input_text = extract_text_from_file(file_path)
+                if input_text:
+                    similarity_results = []
+                    for filename in os.listdir(app.config['DATABASE_FOLDER']):
+                        database_file_path = os.path.join(app.config['DATABASE_FOLDER'], filename)
+                        database_text = extract_text_from_file(database_file_path)
+                        if database_text:
+                            similarity, highlighted_input, highlighted_database = calculate_similarity(input_text, database_text)
+                            similarity_results.append({
+                                "document": filename,
+                                "similarity": round(similarity * 100, 2),
+                                "highlighted_input": highlighted_input,
+                                "highlighted_database": highlighted_database
+                            })
 
-                return render_template("results.html", results=similarity_results, input_text=input_text)
+                    return render_template("results.html", results=similarity_results, input_text=input_text) 
+                else:
+                    return "Error: Could not extract text from the uploaded file."
             else:
-                return "Error: Could not extract text from the uploaded file."
-        else:
-            return "No file uploaded."
+                return "No file uploaded."
+        elif 'database_file' in request.files:
+            # Handle database PDF upload
+            db_file = request.files['database_file']
+            if db_file:
+                db_file_path = os.path.join(app.config['DATABASE_FOLDER'], db_file.filename)
+                db_file.save(db_file_path)
+            return redirect(url_for('index'))  # Redirect back to the main page
     else:
-        return render_template("index.html")
+        # Display database files for deletion
+        database_files = os.listdir(app.config['DATABASE_FOLDER'])
+        return render_template("index.html", database_files=database_files)
+
+@app.route("/delete_db_file/<filename>")
+def delete_db_file(filename):
+    file_path = os.path.join(app.config['DATABASE_FOLDER'], filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    return redirect(url_for('index'))  # Redirect back to the main page
+
 
 if __name__ == "__main__":
     app.run(debug=True)
