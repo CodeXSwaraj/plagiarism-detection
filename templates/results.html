@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Plagiarism Results</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            width: 80%;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h2, h3 {
+            color: #333;
+        }
+
+        mark {
+            background-color: #f7f86c;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .document-result {
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Plagiarism Results</h1>
+
+        <h2>Your Input Text:</h2>
+        <p>{{ input_text | safe }}</p> <hr>
+
+        {% for result in results %}
+            <div class="document-result">
+                <h2>Document: {{ result.document }}</h2>
+                <h3>Similarity: {{ result.similarity }}%</h3>
+
+                <h4>Highlighted Input Text:</h4>
+                <p>{{ result.highlighted_input | safe }}</p>
+
+                <h4>Highlighted Database Text:</h4> 
+                <p>{{ result.highlighted_database | safe }}</p>
+            </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
