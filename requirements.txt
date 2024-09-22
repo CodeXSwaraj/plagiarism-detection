@@ -1,0 +1,5 @@
+Flask
+python-docx
+pdfminer.six
+scikit-learn
+nltk
