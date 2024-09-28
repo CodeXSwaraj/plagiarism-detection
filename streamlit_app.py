@@ -12,6 +12,8 @@ DATABASE_FOLDER = "database"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(DATABASE_FOLDER, exist_ok=True)
 
+# Download NLTK data at the beginning of the script
+nltk.download('punkt', quiet=True)
 
 def extract_text_from_file(file_path):
     """Extracts text from PDF or DOCX files."""
@@ -24,13 +26,8 @@ def extract_text_from_file(file_path):
     else:
         return None
 
-
 def calculate_similarity(text1, text2):
     """Calculates cosine similarity and highlights similar sentences."""
-
-    # Download 'punkt' data if not already downloaded:
-    nltk.download("punkt")
-
     text1_sentences = nltk.sent_tokenize(text1)
     text2_sentences = nltk.sent_tokenize(text2)
 
@@ -67,7 +64,6 @@ def calculate_similarity(text1, text2):
         " ".join(highlighted_text1),
         " ".join(highlighted_text2),
     )
-
 
 # --- Streamlit UI ---
 st.title("Plagiarism Detection App")
