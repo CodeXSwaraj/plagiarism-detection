@@ -5,7 +5,7 @@ from pdfminer.high_level import extract_text
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import nltk
-nltk.download('punkt')
+
 UPLOAD_FOLDER = "uploads"
 DATABASE_FOLDER = "database"
 
@@ -27,35 +27,39 @@ def extract_text_from_file(file_path):
 
 def calculate_similarity(text1, text2):
     """Calculates cosine similarity and highlights similar sentences."""
+
+    # Download 'punkt' data if not already downloaded:
+    nltk.download("punkt")
+
     text1_sentences = nltk.sent_tokenize(text1)
     text2_sentences = nltk.sent_tokenize(text2)
 
-    # Combine all sentences into a single list for vectorization
+    # Combine all sentences for vectorization:
     all_sentences = text1_sentences + text2_sentences
 
-    # 2. Calculate Similarity (using sentences):
+    # Calculate Similarity using sentences:
     vectorizer = TfidfVectorizer()
     tfidf_matrix = vectorizer.fit_transform(all_sentences)
 
-    # Calculate cosine similarity between all sentence pairs
+    # Cosine similarity between all sentences:
     similarity_matrix = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
-    # Extract similarity scores for sentences from text1 and text2
+    # Extract similarity scores for text1 and text2 sentences:
     similarity_scores = similarity_matrix[
         : len(text1_sentences), len(text1_sentences) :
     ]
 
-    # 3.  Highlight Similar Sentences:
+    # Highlight Similar Sentences:
     highlighted_text1 = []
     highlighted_text2 = []
     for i, sentence1 in enumerate(text1_sentences):
         for j, sentence2 in enumerate(text2_sentences):
             similarity = similarity_scores[i, j]
-            if similarity > 0.8:  # You can adjust the threshold
+            if similarity > 0.8:  # Adjust the threshold if needed
                 highlighted_text1.append(f"<mark>{sentence1}</mark>")
                 highlighted_text2.append(f"<mark>{sentence2}</mark>")
-                break  # Move to next sentence in text1 after a match
-        if len(highlighted_text1) <= i:  # If no match is found, add the original sentence
+                break  # Move to the next sentence in text1
+        if len(highlighted_text1) <= i:
             highlighted_text1.append(sentence1)
 
     return (
