@@ -39,20 +39,27 @@ def calculate_similarity(text1, text2):
         tfidf_matrix[: len(text1_sentences)], tfidf_matrix[len(text1_sentences) :]
     )
 
-    # 3.  Highlight Similar Sentences:
+    # 3. Find matching sentence indexes:
+    matching_indexes = []
+    for i in range(len(text1_sentences)):
+        for j in range(len(text2_sentences)):
+            if similarity_matrix[i][j] > 0.8:  # You can adjust this threshold
+                matching_indexes.append((i, j))
+
+    # 4. Highlight matching sentences:
     highlighted_text1 = []
     highlighted_text2 = []
-    for i, sentence1 in enumerate(text1_sentences):
-        match_found = False
-        for j, sentence2 in enumerate(text2_sentences):
-            similarity = similarity_matrix[i][j]
-            if similarity > 0.8:  # You can adjust the threshold
-                highlighted_text1.append(f"<mark>{sentence1}</mark>")
-                highlighted_text2.append(f"<mark>{sentence2}</mark>")
-                match_found = True
-                break
-        if not match_found:
-            highlighted_text1.append(sentence1)
+    for i, sentence in enumerate(text1_sentences):
+        if any(i == index1 for index1, _ in matching_indexes):
+            highlighted_text1.append(f"<mark>{sentence}</mark>")
+        else:
+            highlighted_text1.append(sentence)
+
+    for j, sentence in enumerate(text2_sentences):
+        if any(j == index2 for _, index2 in matching_indexes):
+            highlighted_text2.append(f"<mark>{sentence}</mark>")
+        else:
+            highlighted_text2.append(sentence)
 
     return (
         similarity_matrix.max(),
@@ -64,19 +71,42 @@ def calculate_similarity(text1, text2):
 # --- Streamlit UI ---
 st.title("Plagiarism Detection App")
 
-# Database Management Section: 
+# Database Management Section:
 st.header("Manage Database PDFs")
 
-database_files = os.listdir(DATABASE_FOLDER)
-st.write(f"**Existing Database Files:** {', '.join(database_files) or 'None'}")
+# Initialize session state for database files:
+if "database_files" not in st.session_state:
+    st.session_state.database_files = os.listdir(DATABASE_FOLDER)
+
+st.write(
+    f"**Existing Database Files:** {', '.join(st.session_state.database_files) or 'None'}"
+)
 
 db_file = st.file_uploader("Add a PDF to the database", type=["pdf"])
 if db_file is not None:
-    # ... (The database file upload and deletion logic remains the same) 
+    file_path = os.path.join(DATABASE_FOLDER, db_file.name)
+    with open(file_path, "wb") as f:
+        f.write(db_file.getbuffer())
+    st.success(f"File '{db_file.name}' added to database.")
+    # Update database files in session state:
+    st.session_state.database_files.append(db_file.name)
 
-st.markdown("---") # Visual separator
+# Delete PDF from the database
+file_to_delete = st.selectbox("Select a PDF to delete", st.session_state.database_files)
+if st.button("Delete PDF"):
+    file_path = os.path.join(DATABASE_FOLDER, file_to_delete)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        st.success(f"File '{file_to_delete}' deleted from database.")
+        # Update database files in session state:
+        st.session_state.database_files.remove(file_to_delete)
+        st.experimental_rerun()  # Refresh Streamlit
+    else:
+        st.error(f"File '{file_to_delete}' not found in the database.")
 
-# Plagiarism Detection Section: 
+    st.markdown("---")  # Visual separator
+
+# Plagiarism Detection Section:
 
 st.header("Plagiarism Detection")
 
@@ -94,7 +124,7 @@ if uploaded_file is not None:
 
     if input_text:
         similarity_results = []
-        for filename in os.listdir(DATABASE_FOLDER):
+        for filename in st.session_state.database_files:
             database_file_path = os.path.join(DATABASE_FOLDER, filename)
             database_text = extract_text_from_file(database_file_path)
             if database_text:
