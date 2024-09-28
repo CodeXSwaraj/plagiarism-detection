@@ -67,7 +67,6 @@ def calculate_similarity(text1, text2):
         " ".join(highlighted_text2),
     )
 
-
 # --- Streamlit UI ---
 st.title("Plagiarism Detection App")
 
@@ -88,16 +87,24 @@ if db_file is not None:
     with open(file_path, "wb") as f:
         f.write(db_file.getbuffer())
     st.success(f"File '{db_file.name}' added to database.")
+<<<<<<< HEAD
     # Update database files in session state:
     st.session_state.database_files.append(db_file.name)
 
 # Delete PDF from the database
 file_to_delete = st.selectbox("Select a PDF to delete", st.session_state.database_files)
+=======
+    st.experimental_rerun() 
+
+# Delete PDF from the database
+file_to_delete = st.selectbox("Select a PDF to delete", database_files)
+>>>>>>> 106f27eebe2b182033321bb743c2de110a516235
 if st.button("Delete PDF"):
     file_path = os.path.join(DATABASE_FOLDER, file_to_delete)
     if os.path.exists(file_path):
         os.remove(file_path)
         st.success(f"File '{file_to_delete}' deleted from database.")
+<<<<<<< HEAD
         # Update database files in session state:
         st.session_state.database_files.remove(file_to_delete)
         st.experimental_rerun()  # Refresh Streamlit
@@ -105,6 +112,13 @@ if st.button("Delete PDF"):
         st.error(f"File '{file_to_delete}' not found in the database.")
 
     st.markdown("---")  # Visual separator
+=======
+        st.experimental_rerun()
+    else:
+        st.error(f"File '{file_to_delete}' not found in the database.")
+
+    st.markdown("---")  # Visual separator (Correct indentation)
+>>>>>>> 106f27eebe2b182033321bb743c2de110a516235
 
 # Plagiarism Detection Section:
 
@@ -158,3 +172,5 @@ if uploaded_file is not None:
 
     else:
         st.error("Error: Could not extract text from the uploaded file.")
+
+    
