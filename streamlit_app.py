@@ -27,45 +27,43 @@ def extract_text_from_file(file_path):
 
 def calculate_similarity(text1, text2):
     """Calculates cosine similarity and highlights similar sentences."""
-
-    # 1. Tokenize into Sentences:
     text1_sentences = nltk.sent_tokenize(text1)
     text2_sentences = nltk.sent_tokenize(text2)
 
+    # Combine all sentences into a single list for vectorization
+    all_sentences = text1_sentences + text2_sentences
+
     # 2. Calculate Similarity (using sentences):
     vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform(text1_sentences + text2_sentences)
-    similarity_matrix = cosine_similarity(
-        tfidf_matrix[: len(text1_sentences)], tfidf_matrix[len(text1_sentences) :]
-    )
+    tfidf_matrix = vectorizer.fit_transform(all_sentences)
 
-    # 3. Find matching sentence indexes:
-    matching_indexes = []
-    for i in range(len(text1_sentences)):
-        for j in range(len(text2_sentences)):
-            if similarity_matrix[i][j] > 0.8:  # You can adjust this threshold
-                matching_indexes.append((i, j))
+    # Calculate cosine similarity between all sentence pairs
+    similarity_matrix = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
-    # 4. Highlight matching sentences:
+    # Extract similarity scores for sentences from text1 and text2
+    similarity_scores = similarity_matrix[
+        : len(text1_sentences), len(text1_sentences) :
+    ]
+
+    # 3.  Highlight Similar Sentences:
     highlighted_text1 = []
     highlighted_text2 = []
-    for i, sentence in enumerate(text1_sentences):
-        if any(i == index1 for index1, _ in matching_indexes):
-            highlighted_text1.append(f"<mark>{sentence}</mark>")
-        else:
-            highlighted_text1.append(sentence)
-
-    for j, sentence in enumerate(text2_sentences):
-        if any(j == index2 for _, index2 in matching_indexes):
-            highlighted_text2.append(f"<mark>{sentence}</mark>")
-        else:
-            highlighted_text2.append(sentence)
+    for i, sentence1 in enumerate(text1_sentences):
+        for j, sentence2 in enumerate(text2_sentences):
+            similarity = similarity_scores[i, j]
+            if similarity > 0.8:  # You can adjust the threshold
+                highlighted_text1.append(f"<mark>{sentence1}</mark>")
+                highlighted_text2.append(f"<mark>{sentence2}</mark>")
+                break  # Move to next sentence in text1 after a match
+        if len(highlighted_text1) <= i:  # If no match is found, add the original sentence
+            highlighted_text1.append(sentence1)
 
     return (
         similarity_matrix.max(),
         " ".join(highlighted_text1),
         " ".join(highlighted_text2),
     )
+
 
 # --- Streamlit UI ---
 st.title("Plagiarism Detection App")
@@ -87,24 +85,16 @@ if db_file is not None:
     with open(file_path, "wb") as f:
         f.write(db_file.getbuffer())
     st.success(f"File '{db_file.name}' added to database.")
-<<<<<<< HEAD
     # Update database files in session state:
     st.session_state.database_files.append(db_file.name)
 
 # Delete PDF from the database
 file_to_delete = st.selectbox("Select a PDF to delete", st.session_state.database_files)
-=======
-    st.experimental_rerun() 
-
-# Delete PDF from the database
-file_to_delete = st.selectbox("Select a PDF to delete", database_files)
->>>>>>> 106f27eebe2b182033321bb743c2de110a516235
 if st.button("Delete PDF"):
     file_path = os.path.join(DATABASE_FOLDER, file_to_delete)
     if os.path.exists(file_path):
         os.remove(file_path)
         st.success(f"File '{file_to_delete}' deleted from database.")
-<<<<<<< HEAD
         # Update database files in session state:
         st.session_state.database_files.remove(file_to_delete)
         st.experimental_rerun()  # Refresh Streamlit
@@ -112,13 +102,6 @@ if st.button("Delete PDF"):
         st.error(f"File '{file_to_delete}' not found in the database.")
 
     st.markdown("---")  # Visual separator
-=======
-        st.experimental_rerun()
-    else:
-        st.error(f"File '{file_to_delete}' not found in the database.")
-
-    st.markdown("---")  # Visual separator (Correct indentation)
->>>>>>> 106f27eebe2b182033321bb743c2de110a516235
 
 # Plagiarism Detection Section:
 
@@ -172,5 +155,3 @@ if uploaded_file is not None:
 
     else:
         st.error("Error: Could not extract text from the uploaded file.")
-
-    
