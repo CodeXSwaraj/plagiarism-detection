@@ -1,19 +1,16 @@
 import streamlit as st
 import os
+import re
 from docx import Document
 from pdfminer.high_level import extract_text
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-import nltk
 
 UPLOAD_FOLDER = "uploads"
 DATABASE_FOLDER = "database"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(DATABASE_FOLDER, exist_ok=True)
-
-# Download NLTK data at the beginning of the script
-nltk.download('punkt', quiet=True)
 
 def extract_text_from_file(file_path):
     """Extracts text from PDF or DOCX files."""
@@ -26,10 +23,14 @@ def extract_text_from_file(file_path):
     else:
         return None
 
+def simple_sentence_tokenize(text):
+    """A simple sentence tokenizer that splits on periods, question marks, and exclamation points."""
+    return re.split(r'(?<=[.!?])\s+', text)
+
 def calculate_similarity(text1, text2):
     """Calculates cosine similarity and highlights similar sentences."""
-    text1_sentences = nltk.sent_tokenize(text1)
-    text2_sentences = nltk.sent_tokenize(text2)
+    text1_sentences = simple_sentence_tokenize(text1)
+    text2_sentences = simple_sentence_tokenize(text2)
 
     # Combine all sentences for vectorization:
     all_sentences = text1_sentences + text2_sentences
